@@ -2,7 +2,7 @@ import React from 'react';
 
 import renderer from 'react-test-renderer';
 
-import {Text} from 'react-native';
+import {StyleSheet, Text} from 'react-native';
 
 import HTMLView from '../HTMLView';
 
@@ -39,8 +39,20 @@ describe('<HTMLView/>', () => {
     ).toMatchSnapshot();
   });
 
+  it('should handle additional text nodes between list items', () => {
+    const htmlContent = `<ol>
+      <li> a </li>
+      <li> b </li>
+    </ol>`;
+
+    expect(
+      renderer.create(<HTMLView value={htmlContent} />).toJSON()
+    ).toMatchSnapshot();
+  });
+
   it('should render an <Image />, with default width/height of 1', () => {
-    const imgSrc = 'https://facebook.github.io/react-native/img/header_logo.png';
+    const imgSrc =
+      'https://facebook.github.io/react-native/img/header_logo.png';
     const htmlContent = `<img src="${imgSrc}"/>`;
 
     expect(
@@ -49,11 +61,27 @@ describe('<HTMLView/>', () => {
   });
 
   it('should render an <Image /> with set width/height', () => {
-    const imgSrc = 'https://facebook.github.io/react-native/img/header_logo.png';
+    const imgSrc =
+      'https://facebook.github.io/react-native/img/header_logo.png';
     const htmlContent = `<img src="${imgSrc}" width="66" height="58"/>`;
 
     expect(
       renderer.create(<HTMLView value={htmlContent} />).toJSON()
+    ).toMatchSnapshot();
+  });
+
+  it('should render inherited styles correctly', () => {
+    const htmlContent = '<b>RED<u>BLUE<i>GREEN</i></u></b>';
+    const stylesheet = StyleSheet.create({
+      b: {color: 'red'},
+      u: {color: 'blue'},
+      i: {color: 'green'},
+    });
+
+    expect(
+      renderer
+        .create(<HTMLView value={htmlContent} stylesheet={stylesheet} />)
+        .toJSON()
     ).toMatchSnapshot();
   });
 
@@ -106,13 +134,56 @@ describe('<HTMLView/>', () => {
 
     function renderNode(node, index) {
       if (node.name == 'thing') {
-        return <Text key={index}>{node.attribs.b}</Text>;
+        return (
+          <Text key={index}>
+            {node.attribs.b}
+          </Text>
+        );
       }
     }
 
     expect(
       renderer
         .create(<HTMLView value={htmlContent} renderNode={renderNode} />)
+        .toJSON()
+    ).toMatchSnapshot();
+  });
+
+  it('can use a custom node class', () => {
+    class Node extends React.Component {
+      render() {
+        return <Text {...this.props} selectable={false} />;
+      }
+    }
+
+    const htmlContent = `
+      <div>
+        <div a="b" />
+      </div>
+    `;
+
+    expect(
+      renderer
+        .create(<HTMLView value={htmlContent} NodeComponent={Node} />)
+        .toJSON()
+    ).toMatchSnapshot();
+  });
+
+  it('can use custom node props', () => {
+    const htmlContent = `
+      <div>
+        <div a="b" />
+      </div>
+    `;
+
+    expect(
+      renderer
+        .create(
+          <HTMLView
+            value={htmlContent}
+            nodeComponentProps={{selectable: false}}
+          />
+        )
         .toJSON()
     ).toMatchSnapshot();
   });
